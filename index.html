@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>테스트</title>
+<style>
+  body { font-family: sans-serif; padding: 40px; }
+  input, button { padding: 10px; font-size: 16px; margin: 5px; }
+  #list { margin-top: 20px; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<h1>응원 메시지 테스트</h1>
+<input id="msg" placeholder="응원 메시지를 입력하세요">
+<button onclick="send()">보내기</button>
+
+<div id="list"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue }
+    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+  // ↓↓↓ 선생님이 받으신 키 그대로 들어가 있습니다
+  const firebaseConfig = {
+    apiKey: "AIzaSyBhc3HnwSYfXVAdfQfftEaen4nMTUsxCIk",
+    authDomain: "naegok-school-sportsclub.firebaseapp.com",
+    databaseURL: "https://naegok-school-sportsclub-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "naegok-school-sportsclub",
+    storageBucket: "naegok-school-sportsclub.firebasestorage.app",
+    messagingSenderId: "1044759776622",
+    appId: "1:1044759776622:web:59c0e29903826803e2857f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const cheersRef = ref(db, "cheers");
+
+  // 보내기 버튼 동작
+  window.send = function() {
+    const text = document.getElementById("msg").value;
+    if (!text) return;
+    push(cheersRef, { text: text, time: Date.now() });
+    document.getElementById("msg").value = "";
+  };
+
+  // 실시간으로 메시지 받아오기
+  onValue(cheersRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    const list = Object.values(data).reverse();
+    document.getElementById("list").innerHTML =
+      list.map(m => "💬 " + m.text).join("<br>");
+  });
+</script>
+
+</body>
+</html>
