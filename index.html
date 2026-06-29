@@ -2,27 +2,185 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>테스트</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>내곡중학교 학교스포츠클럽 대회</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { font-family: sans-serif; padding: 40px; }
-  input, button { padding: 10px; font-size: 16px; margin: 5px; }
-  #list { margin-top: 20px; font-size: 18px; }
+  :root {
+    --navy: #0A2540;
+    --navy-soft: #1a3a5c;
+    --orange: #FF6B35;
+    --orange-soft: #ff8456;
+  }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #fafafa;
+    color: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+  }
+  .navy-bg { background: var(--navy); }
+  .navy-text { color: var(--navy); }
+  .orange-bg { background: var(--orange); }
+  .orange-text { color: var(--orange); }
+  .card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+  }
+  .badge-live {
+    background: var(--orange);
+    color: white;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  .tab-btn { transition: all 0.2s; }
+  .tab-btn.active { background: var(--navy); color: white; }
+  .scroll-x { scrollbar-width: none; }
+  .scroll-x::-webkit-scrollbar { display: none; }
 </style>
 </head>
 <body>
 
-<h1>응원 메시지 테스트</h1>
-<input id="msg" placeholder="응원 메시지를 입력하세요">
-<button onclick="send()">보내기</button>
+<!-- 헤더 -->
+<header class="navy-bg text-white">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div>
+      <div class="text-xs opacity-70">NAEGOK MIDDLE SCHOOL</div>
+      <div class="text-lg font-bold">학교스포츠클럽 대회</div>
+    </div>
+    <a href="admin.html" class="text-xs opacity-60 hover:opacity-100">관리자</a>
+  </div>
+</header>
 
-<div id="list"></div>
+<!-- Hero -->
+<section class="navy-bg text-white pb-12">
+  <div class="max-w-6xl mx-auto px-4 pt-4">
+    <div id="hero-content">
+      <h1 class="text-3xl md:text-5xl font-bold mb-3" id="tournament-name">대회 정보를 불러오는 중...</h1>
+      <p class="text-lg opacity-80 mb-6" id="tournament-period">-</p>
+      <div class="flex flex-wrap gap-6 text-sm">
+        <div>
+          <div class="opacity-60">D-DAY</div>
+          <div class="text-2xl font-bold orange-text" id="dday">-</div>
+        </div>
+        <div>
+          <div class="opacity-60">개회식</div>
+          <div class="text-lg font-semibold" id="opening">-</div>
+        </div>
+        <div>
+          <div class="opacity-60">폐회식</div>
+          <div class="text-lg font-semibold" id="closing">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KPI -->
+<section class="max-w-6xl mx-auto px-4 -mt-6 relative z-10">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="card p-4">
+      <div class="text-xs text-gray-500">총 경기</div>
+      <div class="text-2xl font-bold navy-text" id="kpi-total">0</div>
+    </div>
+    <div class="card p-4">
+      <div class="text-xs text-gray-500">오늘 경기</div>
+      <div class="text-2xl font-bold orange-text" id="kpi-today">0</div>
+    </div>
+    <div class="card p-4">
+      <div class="text-xs text-gray-500">참가 팀</div>
+      <div class="text-2xl font-bold navy-text" id="kpi-teams">0</div>
+    </div>
+    <div class="card p-4">
+      <div class="text-xs text-gray-500">응원 메시지</div>
+      <div class="text-2xl font-bold orange-text" id="kpi-cheers">0</div>
+    </div>
+  </div>
+</section>
+
+<!-- 종목 -->
+<section class="max-w-6xl mx-auto px-4 mt-10">
+  <h2 class="text-xl font-bold navy-text mb-4">종목</h2>
+  <div id="sports-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+</section>
+
+<!-- 오늘의 경기 -->
+<section class="max-w-6xl mx-auto px-4 mt-10">
+  <h2 class="text-xl font-bold navy-text mb-4">오늘의 경기</h2>
+  <div id="today-matches" class="space-y-2"></div>
+</section>
+
+<!-- 순위 -->
+<section class="max-w-6xl mx-auto px-4 mt-10">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-bold navy-text">실시간 순위</h2>
+    <select id="standings-sport" class="text-sm border rounded-lg px-3 py-1.5"></select>
+  </div>
+  <div class="card overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-600">
+        <tr>
+          <th class="text-left p-3 w-12">순위</th>
+          <th class="text-left p-3">팀</th>
+          <th class="text-right p-3">승</th>
+          <th class="text-right p-3">무</th>
+          <th class="text-right p-3">패</th>
+          <th class="text-right p-3">득실</th>
+          <th class="text-right p-3 font-bold">승점</th>
+        </tr>
+      </thead>
+      <tbody id="standings-body"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 인터뷰 -->
+<section class="max-w-6xl mx-auto px-4 mt-10">
+  <h2 class="text-xl font-bold navy-text mb-4">선수 인터뷰</h2>
+  <div id="interviews" class="grid md:grid-cols-2 gap-3"></div>
+</section>
+
+<!-- 응원의 벽 -->
+<section class="max-w-6xl mx-auto px-4 mt-10">
+  <h2 class="text-xl font-bold navy-text mb-4">응원의 벽</h2>
+
+  <div class="card p-4 mb-4">
+    <div class="flex gap-2 mb-2">
+      <input id="cheer-name" placeholder="이름 (예: 3-1 김민준)"
+             class="flex-1 border rounded-lg px-3 py-2 text-sm" maxlength="20">
+    </div>
+    <textarea id="cheer-text" placeholder="응원 메시지를 입력하세요 (200자 이내)"
+              class="w-full border rounded-lg px-3 py-2 text-sm resize-none" rows="2" maxlength="200"></textarea>
+    <div class="flex justify-between items-center mt-2">
+      <div class="text-xs text-gray-500">⚠ 부적절한 메시지는 관리자가 삭제합니다</div>
+      <button onclick="sendCheer()" class="orange-bg text-white px-4 py-2 rounded-lg text-sm font-semibold">
+        보내기
+      </button>
+    </div>
+  </div>
+
+  <div id="cheers-list" class="grid md:grid-cols-2 gap-2"></div>
+</section>
+
+<!-- 공지 -->
+<section class="max-w-6xl mx-auto px-4 mt-10 mb-16">
+  <h2 class="text-xl font-bold navy-text mb-4">공지사항</h2>
+  <div id="notices" class="space-y-2"></div>
+</section>
+
+<!-- Footer -->
+<footer class="navy-bg text-white py-6 text-center text-xs opacity-70">
+  내곡중학교 · 학교스포츠클럽 운영팀
+</footer>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-  import { getDatabase, ref, push, onValue }
+  import { getDatabase, ref, push, onValue, set }
     from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-  // ↓↓↓ 선생님이 받으신 키 그대로 들어가 있습니다
   const firebaseConfig = {
     apiKey: "AIzaSyBhc3HnwSYfXVAdfQfftEaen4nMTUsxCIk",
     authDomain: "naegok-school-sportsclub.firebaseapp.com",
@@ -35,23 +193,257 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const cheersRef = ref(db, "cheers");
 
-  // 보내기 버튼 동작
-  window.send = function() {
-    const text = document.getElementById("msg").value;
-    if (!text) return;
-    push(cheersRef, { text: text, time: Date.now() });
-    document.getElementById("msg").value = "";
+  let state = {
+    tournament: {},
+    sports: {},
+    teams: {},
+    matches: {},
+    interviews: {},
+    cheers: {},
+    notices: {}
   };
 
-  // 실시간으로 메시지 받아오기
-  onValue(cheersRef, (snapshot) => {
-    const data = snapshot.val() || {};
-    const list = Object.values(data).reverse();
-    document.getElementById("list").innerHTML =
-      list.map(m => "💬 " + m.text).join("<br>");
+  // 데이터 실시간 구독
+  ["tournament","sports","teams","matches","interviews","cheers","notices"].forEach(key => {
+    onValue(ref(db, key), (snap) => {
+      state[key] = snap.val() || (key === "tournament" ? {} : {});
+      render();
+    });
   });
+
+  function render() {
+    renderHero();
+    renderKPI();
+    renderSports();
+    renderTodayMatches();
+    renderStandingsSelector();
+    renderStandings();
+    renderInterviews();
+    renderCheers();
+    renderNotices();
+  }
+
+  function renderHero() {
+    const t = state.tournament || {};
+    document.getElementById("tournament-name").textContent = t.name || "내곡중 학교스포츠클럽 대회";
+    document.getElementById("tournament-period").textContent =
+      (t.startDate && t.endDate) ? `${t.startDate} ~ ${t.endDate}` : "기간 미정";
+    document.getElementById("opening").textContent = t.opening || "-";
+    document.getElementById("closing").textContent = t.closing || "-";
+
+    if (t.startDate) {
+      const days = Math.ceil((new Date(t.startDate) - new Date()) / 86400000);
+      document.getElementById("dday").textContent = days > 0 ? `D-${days}` : (days === 0 ? "D-DAY" : `D+${-days}`);
+    }
+  }
+
+  function renderKPI() {
+    const matches = Object.values(state.matches || {});
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById("kpi-total").textContent = matches.length;
+    document.getElementById("kpi-today").textContent =
+      matches.filter(m => (m.datetime || "").startsWith(today)).length;
+    document.getElementById("kpi-teams").textContent = Object.keys(state.teams || {}).length;
+    document.getElementById("kpi-cheers").textContent =
+      Object.values(state.cheers || {}).filter(c => c.approved !== false).length;
+  }
+
+  function renderSports() {
+    const grid = document.getElementById("sports-grid");
+    const sports = Object.values(state.sports || {});
+    if (sports.length === 0) {
+      grid.innerHTML = '<div class="text-sm text-gray-400 col-span-full">등록된 종목이 없습니다</div>';
+      return;
+    }
+    grid.innerHTML = sports.map(s => {
+      const matches = Object.values(state.matches || {}).filter(m => m.sportId === s.id);
+      const done = matches.filter(m => m.status === "done").length;
+      const pct = matches.length ? Math.round(done / matches.length * 100) : 0;
+      return `
+        <div class="card p-4">
+          <div class="font-semibold navy-text">${s.name}</div>
+          <div class="text-xs text-gray-500 mt-1">${done}/${matches.length} 경기 완료</div>
+          <div class="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full orange-bg" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function renderTodayMatches() {
+    const today = new Date().toISOString().slice(0,10);
+    const list = Object.values(state.matches || {})
+      .filter(m => (m.datetime || "").startsWith(today))
+      .sort((a,b) => (a.datetime || "").localeCompare(b.datetime || ""));
+
+    const box = document.getElementById("today-matches");
+    if (list.length === 0) {
+      box.innerHTML = '<div class="card p-6 text-center text-gray-400 text-sm">오늘 예정된 경기가 없습니다</div>';
+      return;
+    }
+    box.innerHTML = list.map(m => {
+      const sport = (state.sports || {})[m.sportId]?.name || "-";
+      const home = (state.teams || {})[m.homeTeamId]?.name || m.homeTeamId;
+      const away = (state.teams || {})[m.awayTeamId]?.name || m.awayTeamId;
+      const time = m.datetime ? m.datetime.slice(11,16) : "";
+      const badge = m.status === "live"
+        ? '<span class="badge-live text-xs px-2 py-0.5 rounded">LIVE</span>'
+        : m.status === "done"
+        ? '<span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded">종료</span>'
+        : '<span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded">예정</span>';
+      const score = (m.homeScore !== undefined && m.awayScore !== undefined)
+        ? `<span class="font-bold orange-text">${m.homeScore} : ${m.awayScore}</span>`
+        : `<span class="text-gray-400">vs</span>`;
+      return `
+        <div class="card p-3 flex items-center gap-3">
+          <div class="text-xs text-gray-500 w-14">${time}</div>
+          <div class="text-xs bg-gray-100 px-2 py-0.5 rounded">${sport}</div>
+          <div class="flex-1 text-center">
+            <span class="font-medium">${home}</span>
+            <span class="mx-3">${score}</span>
+            <span class="font-medium">${away}</span>
+          </div>
+          <div>${badge}</div>
+        </div>`;
+    }).join("");
+  }
+
+  function renderStandingsSelector() {
+    const sel = document.getElementById("standings-sport");
+    const sports = Object.values(state.sports || {});
+    const cur = sel.value;
+    sel.innerHTML = sports.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+    if (cur && sports.find(s => s.id === cur)) sel.value = cur;
+    sel.onchange = renderStandings;
+  }
+
+  function renderStandings() {
+    const sportId = document.getElementById("standings-sport").value;
+    const teams = Object.values(state.teams || {}).filter(t => t.sportId === sportId);
+    const matches = Object.values(state.matches || {})
+      .filter(m => m.sportId === sportId && m.status === "done");
+
+    const table = {};
+    teams.forEach(t => { table[t.id] = { team: t, w:0, d:0, l:0, gf:0, ga:0, pts:0 }; });
+
+    matches.forEach(m => {
+      const h = table[m.homeTeamId], a = table[m.awayTeamId];
+      if (!h || !a) return;
+      const hs = Number(m.homeScore || 0), as = Number(m.awayScore || 0);
+      h.gf += hs; h.ga += as; a.gf += as; a.ga += hs;
+      if (hs > as) { h.w++; h.pts+=3; a.l++; }
+      else if (hs < as) { a.w++; a.pts+=3; h.l++; }
+      else { h.d++; a.d++; h.pts++; a.pts++; }
+    });
+
+    const sorted = Object.values(table).sort((a,b) =>
+      b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
+
+    const body = document.getElementById("standings-body");
+    if (sorted.length === 0) {
+      body.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-400 text-sm">등록된 팀이 없습니다</td></tr>';
+      return;
+    }
+    body.innerHTML = sorted.map((r, i) => `
+      <tr class="border-t">
+        <td class="p-3 font-bold ${i<3?'orange-text':''}">${i+1}</td>
+        <td class="p-3 font-medium">${r.team.name}</td>
+        <td class="p-3 text-right">${r.w}</td>
+        <td class="p-3 text-right">${r.d}</td>
+        <td class="p-3 text-right">${r.l}</td>
+        <td class="p-3 text-right">${r.gf - r.ga > 0 ? '+' : ''}${r.gf - r.ga}</td>
+        <td class="p-3 text-right font-bold navy-text">${r.pts}</td>
+      </tr>`).join("");
+  }
+
+  function renderInterviews() {
+    const box = document.getElementById("interviews");
+    const list = Object.values(state.interviews || {});
+    if (list.length === 0) {
+      box.innerHTML = '<div class="text-sm text-gray-400">등록된 인터뷰가 없습니다</div>';
+      return;
+    }
+    box.innerHTML = list.map(it => `
+      <div class="card p-4">
+        <div class="font-semibold navy-text">${it.player || "선수"}</div>
+        <div class="text-xs text-gray-500 mb-2">${it.team || ""}</div>
+        <div class="text-sm text-gray-700">"${it.content || ""}"</div>
+      </div>`).join("");
+  }
+
+  function renderCheers() {
+    const box = document.getElementById("cheers-list");
+    const list = Object.entries(state.cheers || {})
+      .map(([id, c]) => ({ id, ...c }))
+      .filter(c => c.approved !== false)
+      .sort((a,b) => (b.time || 0) - (a.time || 0))
+      .slice(0, 30);
+
+    if (list.length === 0) {
+      box.innerHTML = '<div class="text-sm text-gray-400 col-span-full">첫 응원의 주인공이 되어주세요!</div>';
+      return;
+    }
+    box.innerHTML = list.map(c => `
+      <div class="card p-3">
+        <div class="text-xs orange-text font-semibold">${c.name || "익명"}</div>
+        <div class="text-sm mt-1">${escapeHtml(c.text || "")}</div>
+      </div>`).join("");
+  }
+
+  function renderNotices() {
+    const box = document.getElementById("notices");
+    const list = Object.values(state.notices || {})
+      .sort((a,b) => (b.time || 0) - (a.time || 0));
+    if (list.length === 0) {
+      box.innerHTML = '<div class="text-sm text-gray-400">공지사항이 없습니다</div>';
+      return;
+    }
+    box.innerHTML = list.map(n => {
+      const color = n.level === "urgent" ? "bg-red-100 text-red-700"
+                  : n.level === "important" ? "bg-orange-100 text-orange-700"
+                  : "bg-gray-100 text-gray-700";
+      const label = n.level === "urgent" ? "긴급" : n.level === "important" ? "중요" : "일반";
+      return `
+        <div class="card p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="${color} text-xs px-2 py-0.5 rounded">${label}</span>
+            <span class="font-semibold">${n.title || ""}</span>
+          </div>
+          <div class="text-sm text-gray-600">${n.content || ""}</div>
+        </div>`;
+    }).join("");
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  // 응원 보내기 (5초 디바운스)
+  let lastCheerTime = 0;
+  window.sendCheer = function() {
+    const now = Date.now();
+    if (now - lastCheerTime < 5000) {
+      alert("5초 후에 다시 시도해주세요");
+      return;
+    }
+    const name = document.getElementById("cheer-name").value.trim();
+    const text = document.getElementById("cheer-text").value.trim();
+    if (!name || !text) {
+      alert("이름과 메시지를 모두 입력해주세요");
+      return;
+    }
+    push(ref(db, "cheers"), {
+      name: name,
+      text: text,
+      time: now,
+      approved: true  // 운영 안정화 후 false로 바꿔서 모더레이션 큐 활성화
+    });
+    document.getElementById("cheer-text").value = "";
+    lastCheerTime = now;
+  };
 </script>
 
 </body>

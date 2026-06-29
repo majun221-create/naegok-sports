@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 · 내곡중 학교스포츠클럽</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --navy: #0A2540; --orange: #FF6B35; }
+  body { font-family: 'Pretendard', -apple-system, sans-serif; background: #f5f5f7; }
+  .navy-bg { background: #0A2540; }
+  .navy-text { color: #0A2540; }
+  .orange-bg { background: #FF6B35; }
+  .tab { padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .tab.active { background: #0A2540; color: white; }
+  .tab:not(.active):hover { background: #e5e7eb; }
+  input, select, textarea {
+    width: 100%; padding: 8px 12px; border: 1px solid #d1d5db;
+    border-radius: 8px; font-size: 14px; background: white;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: #0A2540;
+  }
+  label { font-size: 12px; color: #6b7280; display: block; margin-bottom: 4px; }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: #0A2540; color: white; }
+  .btn-orange { background: #FF6B35; color: white; }
+  .btn-danger { background: #fee; color: #c33; border: 1px solid #fcc; }
+  .btn-ghost { background: white; border: 1px solid #d1d5db; color: #374151; }
+  table { width: 100%; font-size: 13px; }
+  table th { background: #f9fafb; padding: 10px; text-align: left; color: #6b7280; font-weight: 500; }
+  table td { padding: 10px; border-top: 1px solid #f3f4f6; }
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div id="login-screen" class="min-h-screen flex items-center justify-center px-4">
+  <div class="bg-white rounded-2xl p-8 w-full max-w-sm border">
+    <div class="text-center mb-6">
+      <div class="navy-text text-xs font-bold tracking-widest">NAEGOK ADMIN</div>
+      <div class="text-xl font-bold mt-2">관리자 로그인</div>
+    </div>
+    <label>비밀번호</label>
+    <input id="pw-input" type="password" placeholder="비밀번호 입력"
+           onkeydown="if(event.key==='Enter') tryLogin()">
+    <button class="btn btn-primary w-full mt-4" onclick="tryLogin()">로그인</button>
+    <div id="login-error" class="text-xs text-red-500 mt-2 text-center hidden">비밀번호가 틀렸습니다</div>
+  </div>
+</div>
+
+<!-- 관리자 패널 -->
+<div id="admin-panel" class="hidden">
+  <header class="navy-bg text-white">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div>
+        <div class="text-xs opacity-70">NAEGOK ADMIN</div>
+        <div class="font-bold">관리자 페이지</div>
+      </div>
+      <div class="flex gap-2">
+        <a href="index.html" target="_blank" class="text-xs bg-white/10 px-3 py-1.5 rounded">공개 페이지</a>
+        <button onclick="logout()" class="text-xs bg-white/10 px-3 py-1.5 rounded">로그아웃</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 탭 -->
+  <div class="max-w-6xl mx-auto px-4 py-4">
+    <div class="flex gap-2 overflow-x-auto mb-4">
+      <div class="tab active" data-tab="tournament">대회 정보</div>
+      <div class="tab" data-tab="sports">종목</div>
+      <div class="tab" data-tab="teams">팀</div>
+      <div class="tab" data-tab="matches">경기 일정</div>
+      <div class="tab" data-tab="results">결과 입력</div>
+      <div class="tab" data-tab="interviews">인터뷰</div>
+      <div class="tab" data-tab="cheers">응원 메시지</div>
+      <div class="tab" data-tab="notices">공지</div>
+    </div>
+
+    <!-- 대회 정보 -->
+    <div class="tab-panel" data-panel="tournament">
+      <div class="bg-white rounded-xl p-5 border">
+        <h3 class="font-bold navy-text mb-4">대회 정보</h3>
+        <div class="grid md:grid-cols-2 gap-3">
+          <div><label>대회명</label><input id="t-name" placeholder="예: 2026 내곡중 학교스포츠클럽 대회"></div>
+          <div><label>장소</label><input id="t-place" placeholder="내곡중학교 운동장 외"></div>
+          <div><label>시작일</label><input id="t-start" type="date"></div>
+          <div><label>종료일</label><input id="t-end" type="date"></div>
+          <div><label>개회식</label><input id="t-opening" placeholder="2026-07-08 09:00"></div>
+          <div><label>폐회식</label><input id="t-closing" placeholder="2026-07-12 15:00"></div>
+          <div class="md:col-span-2"><label>소개문</label>
+            <textarea id="t-intro" rows="3" placeholder="대회 소개를 입력하세요"></textarea>
+          </div>
+        </div>
+        <button class="btn btn-primary mt-4" onclick="saveTournament()">저장</button>
+      </div>
+    </div>
+
+    <!-- 종목 -->
+    <div class="tab-panel hidden" data-panel="sports">
+      <div class="bg-white rounded-xl p-5 border mb-4">
+        <h3 class="font-bold navy-text mb-2">종목 등록</h3>
+        <div class="text-xs text-gray-500 mb-3">최초 1회 "기본 종목 시드"를 누르면 8개가 자동 등록됩니다</div>
+        <div class="grid md:grid-cols-3 gap-3 mb-3">
+          <div><label>종목명</label><input id="s-name" placeholder="예: 남자축구"></div>
+          <div><label>채점 방식</label>
+            <select id="s-type">
+              <option value="score">득점제 (축구·농구)</option>
+              <option value="sets">세트제 (배구·배드민턴)</option>
+              <option value="time">기록제 (스포츠스태킹)</option>
+              <option value="judge">심사제 (방송댄스)</option>
+            </select>
+          </div>
+          <div class="flex items-end"><button class="btn btn-primary w-full" onclick="addSport()">추가</button></div>
+        </div>
+        <button class="btn btn-ghost text-xs" onclick="seedSports()">기본 종목 8개 시드</button>
+      </div>
+      <div class="bg-white rounded-xl border overflow-hidden">
+        <table><thead><tr><th>종목명</th><th>방식</th><th class="text-right">삭제</th></tr></thead>
+          <tbody id="sports-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 팀 -->
+    <div class="tab-panel hidden" data-panel="teams">
+      <div class="bg-white rounded-xl p-5 border mb-4">
+        <h3 class="font-bold navy-text mb-3">팀 등록</h3>
+        <div class="grid md:grid-cols-4 gap-3">
+          <div><label>종목</label><select id="tm-sport"></select></div>
+          <div><label>팀명</label><input id="tm-name" placeholder="예: 3-1"></div>
+          <div><label>지도교사</label><input id="tm-coach" placeholder="담임명"></div>
+          <div class="flex items-end"><button class="btn btn-primary w-full" onclick="addTeam()">추가</button></div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border overflow-hidden">
+        <table><thead><tr><th>종목</th><th>팀명</th><th>지도교사</th><th class="text-right">삭제</th></tr></thead>
+          <tbody id="teams-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 경기 일정 -->
+    <div class="tab-panel hidden" data-panel="matches">
+      <div class="bg-white rounded-xl p-5 border mb-4">
+        <h3 class="font-bold navy-text mb-3">경기 일정 등록</h3>
+        <div class="grid md:grid-cols-3 gap-3">
+          <div><label>종목</label><select id="m-sport" onchange="updateTeamSelects()"></select></div>
+          <div><label>라운드</label>
+            <select id="m-round">
+              <option>예선</option><option>8강</option><option>4강</option><option>결승</option>
+            </select>
+          </div>
+          <div><label>일시</label><input id="m-datetime" type="datetime-local"></div>
+          <div><label>홈팀</label><select id="m-home"></select></div>
+          <div><label>원정팀</label><select id="m-away"></select></div>
+          <div><label>장소</label><input id="m-place" placeholder="운동장 / 체육관 등"></div>
+        </div>
+        <button class="btn btn-primary mt-4" onclick="addMatch()">경기 추가</button>
+      </div>
+      <div class="bg-white rounded-xl border overflow-hidden">
+        <table><thead><tr><th>일시</th><th>종목</th><th>라운드</th><th>대진</th><th>장소</th><th class="text-right">삭제</th></tr></thead>
+          <tbody id="matches-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 결과 입력 -->
+    <div class="tab-panel hidden" data-panel="results">
+      <div class="bg-white rounded-xl border overflow-hidden">
+        <table>
+          <thead><tr><th>일시</th><th>종목</th><th>대진</th><th>점수</th><th>상태</th><th class="text-right">저장</th></tr></thead>
+          <tbody id="results-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 인터뷰 -->
+    <div class="tab-panel hidden" data-panel="interviews">
+      <div class="bg-white rounded-xl p-5 border mb-4">
+        <h3 class="font-bold navy-text mb-3">인터뷰 등록</h3>
+        <div class="grid md:grid-cols-3 gap-3">
+          <div><label>선수</label><input id="i-player" placeholder="이름"></div>
+          <div><label>소속</label><input id="i-team" placeholder="3-1"></div>
+          <div class="flex items-end"><button class="btn btn-primary w-full" onclick="addInterview()">추가</button></div>
+        </div>
+        <label class="mt-3">내용</label>
+        <textarea id="i-content" rows="3" placeholder="인터뷰 내용"></textarea>
+      </div>
+      <div class="bg-white rounded-xl border overflow-hidden">
+        <table><thead><tr><th>선수</th><th>소속</th><th>내용</th><th class="text-right">삭제</th></tr></thead>
+          <tbody id="interviews-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 응원 메시지 -->
+    <div class="tab-panel hidden" data-panel="cheers">
+      <div class="bg-white rounded-xl border overflow-hidden">
+        <table><thead><tr><th>작성자</th><th>메시지</th><th>시각</th><th class="text-right">관리</th></tr></thead>
+          <tbody id="cheers-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 공지 -->
+    <div class="tab-panel hidden" data-panel="notices">
+      <div class="bg-white rounded-xl p-5 border mb-4">
+        <h3 class="font-bold navy-text mb-3">공지 등록</h3>
+        <div class="grid md:grid-cols-3 gap-3">
+          <div><label>중요도</label>
+            <select id="n-level">
+              <option value="normal">일반</option>
+              <option value="important">중요</option>
+              <option value="urgent">긴급</option>
+            </select>
+          </div>
+          <div class="md:col-span-2"><label>제목</label><input id="n-title"></div>
+        </div>
+        <label class="mt-3">내용</label>
+        <textarea id="n-content" rows="3"></textarea>
+        <button class="btn btn-primary mt-4" onclick="addNotice()">등록</button>
+      </div>
+      <div class="bg-white rounded-xl border overflow-hidden">
+        <table><thead><tr><th>중요도</th><th>제목</th><th>내용</th><th class="text-right">삭제</th></tr></thead>
+          <tbody id="notices-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import { getDatabase, ref, set, push, remove, onValue, update }
+    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBhc3HnwSYfXVAdfQfftEaen4nMTUsxCIk",
+    authDomain: "naegok-school-sportsclub.firebaseapp.com",
+    databaseURL: "https://naegok-school-sportsclub-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "naegok-school-sportsclub",
+    storageBucket: "naegok-school-sportsclub.firebasestorage.app",
+    messagingSenderId: "1044759776622",
+    appId: "1:1044759776622:web:59c0e29903826803e2857f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let state = { tournament:{}, sports:{}, teams:{}, matches:{}, interviews:{}, cheers:{}, notices:{} };
+
+  ["tournament","sports","teams","matches","interviews","cheers","notices"].forEach(key => {
+    onValue(ref(db, key), (snap) => {
+      state[key] = snap.val() || {};
+      renderAll();
+    });
+  });
+
+  // ───────── 로그인 ─────────
+  window.tryLogin = function() {
+    const pw = document.getElementById("pw-input").value;
+    if (pw === "1004") {
+      sessionStorage.setItem("admin", "1");
+      showPanel();
+    } else {
+      document.getElementById("login-error").classList.remove("hidden");
+    }
+  };
+  window.logout = function() {
+    sessionStorage.removeItem("admin");
+    location.reload();
+  };
+  function showPanel() {
+    document.getElementById("login-screen").classList.add("hidden");
+    document.getElementById("admin-panel").classList.remove("hidden");
+  }
+  if (sessionStorage.getItem("admin") === "1") showPanel();
+
+  // ───────── 탭 ─────────
+  document.querySelectorAll(".tab").forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+      t.classList.add("active");
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.add("hidden"));
+      document.querySelector(`[data-panel="${t.dataset.tab}"]`).classList.remove("hidden");
+    };
+  });
+
+  // ───────── 대회 정보 ─────────
+  window.saveTournament = function() {
+    const data = {
+      name: document.getElementById("t-name").value,
+      place: document.getElementById("t-place").value,
+      startDate: document.getElementById("t-start").value,
+      endDate: document.getElementById("t-end").value,
+      opening: document.getElementById("t-opening").value,
+      closing: document.getElementById("t-closing").value,
+      intro: document.getElementById("t-intro").value
+    };
+    set(ref(db, "tournament"), data);
+    alert("저장되었습니다");
+  };
+
+  function loadTournament() {
+    const t = state.tournament || {};
+    if (!document.getElementById("t-name")) return;
+    document.getElementById("t-name").value = t.name || "";
+    document.getElementById("t-place").value = t.place || "";
+    document.getElementById("t-start").value = t.startDate || "";
+    document.getElementById("t-end").value = t.endDate || "";
+    document.getElementById("t-opening").value = t.opening || "";
+    document.getElementById("t-closing").value = t.closing || "";
+    document.getElementById("t-intro").value = t.intro || "";
+  }
+
+  // ───────── 종목 ─────────
+  window.addSport = function() {
+    const name = document.getElementById("s-name").value.trim();
+    const type = document.getElementById("s-type").value;
+    if (!name) return alert("종목명을 입력하세요");
+    const id = "sp_" + Date.now();
+    set(ref(db, "sports/" + id), { id, name, type });
+    document.getElementById("s-name").value = "";
+  };
+
+  window.seedSports = function() {
+    if (Object.keys(state.sports).length > 0) {
+      if (!confirm("이미 종목이 있습니다. 추가로 시드할까요?")) return;
+    }
+    const list = [
+      ["남자축구","score"], ["여자축구","score"],
+      ["남자농구","score"], ["여자농구","score"],
+      ["여자배구","sets"], ["배드민턴","sets"],
+      ["스포츠스태킹","time"], ["방송댄스","judge"]
+    ];
+    list.forEach((s, i) => {
+      const id = "sp_" + (Date.now() + i);
+      set(ref(db, "sports/" + id), { id, name: s[0], type: s[1] });
+    });
+  };
+
+  function renderSports() {
+    const tbody = document.getElementById("sports-table");
+    if (!tbody) return;
+    const list = Object.values(state.sports);
+    const labels = { score:"득점제", sets:"세트제", time:"기록제", judge:"심사제" };
+    tbody.innerHTML = list.length === 0
+      ? '<tr><td colspan="3" class="text-center text-gray-400 py-6">등록된 종목이 없습니다</td></tr>'
+      : list.map(s => `
+        <tr>
+          <td class="font-medium">${s.name}</td>
+          <td>${labels[s.type] || s.type}</td>
+          <td class="text-right">
+            <button class="btn btn-danger" onclick="delSport('${s.id}')">삭제</button>
+          </td>
+        </tr>`).join("");
+
+    // 셀렉트 옵션 채우기
+    ["s-type","tm-sport","m-sport"].forEach(()=>{});
+    const opts = list.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+    ["tm-sport","m-sport"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const cur = el.value;
+        el.innerHTML = opts;
+        if (cur) el.value = cur;
+      }
+    });
+    updateTeamSelects();
+  }
+  window.delSport = (id) => {
+    if (confirm("삭제하시겠습니까?")) remove(ref(db, "sports/" + id));
+  };
+
+  // ───────── 팀 ─────────
+  window.addTeam = function() {
+    const sportId = document.getElementById("tm-sport").value;
+    const name = document.getElementById("tm-name").value.trim();
+    const coach = document.getElementById("tm-coach").value.trim();
+    if (!sportId || !name) return alert("종목과 팀명을 입력하세요");
+    const id = "tm_" + Date.now();
+    set(ref(db, "teams/" + id), { id, sportId, name, coach });
+    document.getElementById("tm-name").value = "";
+    document.getElementById("tm-coach").value = "";
+  };
+
+  function renderTeams() {
+    const tbody = document.getElementById("teams-table");
+    if (!tbody) return;
+    const list = Object.values(state.teams);
+    tbody.innerHTML = list.length === 0
+      ? '<tr><td colspan="4" class="text-center text-gray-400 py-6">등록된 팀이 없습니다</td></tr>'
+      : list.map(t => `
+        <tr>
+          <td>${state.sports[t.sportId]?.name || "-"}</td>
+          <td class="font-medium">${t.name}</td>
+          <td>${t.coach || "-"}</td>
+          <td class="text-right">
+            <button class="btn btn-danger" onclick="delTeam('${t.id}')">삭제</button>
+          </td>
+        </tr>`).join("");
+  }
+  window.delTeam = (id) => {
+    if (confirm("삭제하시겠습니까?")) remove(ref(db, "teams/" + id));
+  };
+
+  // ───────── 경기 ─────────
+  window.updateTeamSelects = function() {
+    const sportId = document.getElementById("m-sport")?.value;
+    const teams = Object.values(state.teams).filter(t => t.sportId === sportId);
+    const opts = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+    ["m-home","m-away"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = opts || '<option value="">팀을 먼저 등록하세요</option>';
+    });
+  };
+
+  window.addMatch = function() {
+    const sportId = document.getElementById("m-sport").value;
+    const round = document.getElementById("m-round").value;
+    const datetime = document.getElementById("m-datetime").value;
+    const homeTeamId = document.getElementById("m-home").value;
+    const awayTeamId = document.getElementById("m-away").value;
+    const place = document.getElementById("m-place").value;
+    if (!sportId || !datetime || !homeTeamId || !awayTeamId) return alert("필수 항목을 입력하세요");
+    if (homeTeamId === awayTeamId) return alert("같은 팀끼리 경기는 불가합니다");
+    const id = "mt_" + Date.now();
+    set(ref(db, "matches/" + id), {
+      id, sportId, round, datetime, homeTeamId, awayTeamId, place,
+      status: "scheduled"
+    });
+    document.getElementById("m-datetime").value = "";
+  };
+
+  function renderMatches() {
+    const tbody = document.getElementById("matches-table");
+    if (!tbody) return;
+    const list = Object.values(state.matches).sort((a,b) => (a.datetime||"").localeCompare(b.datetime||""));
+    tbody.innerHTML = list.length === 0
+      ? '<tr><td colspan="6" class="text-center text-gray-400 py-6">경기가 없습니다</td></tr>'
+      : list.map(m => `
+        <tr>
+          <td>${m.datetime?.replace("T"," ") || "-"}</td>
+          <td>${state.sports[m.sportId]?.name || "-"}</td>
+          <td>${m.round}</td>
+          <td>${state.teams[m.homeTeamId]?.name || "?"} vs ${state.teams[m.awayTeamId]?.name || "?"}</td>
+          <td>${m.place || "-"}</td>
+          <td class="text-right">
+            <button class="btn btn-danger" onclick="delMatch('${m.id}')">삭제</button>
+          </td>
+        </tr>`).join("");
+  }
+  window.delMatch = (id) => {
+    if (confirm("삭제하시겠습니까?")) remove(ref(db, "matches/" + id));
+  };
+
+  // ───────── 결과 입력 ─────────
+  function renderResults() {
+    const tbody = document.getElementById("results-table");
+    if (!tbody) return;
+    const list = Object.values(state.matches).sort((a,b) => (a.datetime||"").localeCompare(b.datetime||""));
+    tbody.innerHTML = list.length === 0
+      ? '<tr><td colspan="6" class="text-center text-gray-400 py-6">경기가 없습니다</td></tr>'
+      : list.map(m => `
+        <tr>
+          <td>${m.datetime?.slice(5,16).replace("T"," ") || "-"}</td>
+          <td>${state.sports[m.sportId]?.name || "-"}</td>
+          <td>${state.teams[m.homeTeamId]?.name || "?"} vs ${state.teams[m.awayTeamId]?.name || "?"}</td>
+          <td>
+            <div class="flex gap-1 items-center">
+              <input type="number" id="hs-${m.id}" value="${m.homeScore ?? ''}" class="w-16" placeholder="0">
+              <span>:</span>
+              <input type="number" id="as-${m.id}" value="${m.awayScore ?? ''}" class="w-16" placeholder="0">
+            </div>
+          </td>
+          <td>
+            <select id="st-${m.id}" class="w-24">
+              <option value="scheduled" ${m.status==='scheduled'?'selected':''}>예정</option>
+              <option value="live" ${m.status==='live'?'selected':''}>LIVE</option>
+              <option value="done" ${m.status==='done'?'selected':''}>종료</option>
+            </select>
+          </td>
+          <td class="text-right">
+            <button class="btn btn-orange" onclick="saveResult('${m.id}')">저장</button>
+          </td>
+        </tr>`).join("");
+  }
+  window.saveResult = function(id) {
+    const hs = document.getElementById("hs-"+id).value;
+    const as = document.getElementById("as-"+id).value;
+    const st = document.getElementById("st-"+id).value;
+    update(ref(db, "matches/" + id), {
+      homeScore: hs === "" ? null : Number(hs),
+      awayScore: as === "" ? null : Number(as),
+      status: st
+    });
+  };
+
+  // ───────── 인터뷰 ─────────
+  window.addInterview = function() {
+    const player = document.getElementById("i-player").value.trim();
+    const team = document.getElementById("i-team").value.trim();
+    const content = document.getElementById("i-content").value.trim();
+    if (!player || !content) return alert("선수명과 내용을 입력하세요");
+    const id = "it_" + Date.now();
+    set(ref(db, "interviews/" + id), { id, player, team, content, time: Date.now() });
+    document.getElementById("i-player").value = "";
+    document.getElementById("i-team").value = "";
+    document.getElementById("i-content").value = "";
+  };
+
+  function renderInterviews() {
+    const tbody = document.getElementById("interviews-table");
+    if (!tbody) return;
+    const list = Object.values(state.interviews);
+    tbody.innerHTML = list.length === 0
+      ? '<tr><td colspan="4" class="text-center text-gray-400 py-6">인터뷰가 없습니다</td></tr>'
+      : list.map(i => `
+        <tr>
+          <td class="font-medium">${i.player}</td>
+          <td>${i.team || "-"}</td>
+          <td class="text-gray-600">${i.content?.slice(0,80) || ""}</td>
+          <td class="text-right">
+            <button class="btn btn-danger" onclick="delInterview('${i.id}')">삭제</button>
+          </td>
+        </tr>`).join("");
+  }
+  window.delInterview = (id) => {
+    if (confirm("삭제하시겠습니까?")) remove(ref(db, "interviews/" + id));
+  };
+
+  // ───────── 응원 메시지 ─────────
+  function renderCheers() {
+    const tbody = document.getElementById("cheers-table");
+    if (!tbody) return;
+    const list = Object.entries(state.cheers || {})
+      .map(([id, c]) => ({ id, ...c }))
+      .sort((a,b) => (b.time||0) - (a.time||0));
+    tbody.innerHTML = list.length === 0
+      ? '<tr><td colspan="4" class="text-center text-gray-400 py-6">메시지가 없습니다</td></tr>'
+      : list.map(c => `
+        <tr>
+          <td class="font-medium">${escapeHtml(c.name||"익명")}</td>
+          <td class="text-gray-700">${escapeHtml(c.text||"")}</td>
+          <td class="text-gray-400 text-xs">${c.time ? new Date(c.time).toLocaleString('ko-KR') : ""}</td>
+          <td class="text-right">
+            <button class="btn btn-danger" onclick="delCheer('${c.id}')">삭제</button>
+          </td>
+        </tr>`).join("");
+  }
+  window.delCheer = (id) => {
+    if (confirm("삭제하시겠습니까?")) remove(ref(db, "cheers/" + id));
+  };
+
+  // ───────── 공지 ─────────
+  window.addNotice = function() {
+    const level = document.getElementById("n-level").value;
+    const title = document.getElementById("n-title").value.trim();
+    const content = document.getElementById("n-content").value.trim();
+    if (!title) return alert("제목을 입력하세요");
+    const id = "no_" + Date.now();
+    set(ref(db, "notices/" + id), { id, level, title, content, time: Date.now() });
+    document.getElementById("n-title").value = "";
+    document.getElementById("n-content").value = "";
+  };
+
+  function renderNotices() {
+    const tbody = document.getElementById("notices-table");
+    if (!tbody) return;
+    const list = Object.values(state.notices).sort((a,b) => (b.time||0) - (a.time||0));
+    const labels = { normal:"일반", important:"중요", urgent:"긴급" };
+    tbody.innerHTML = list.length === 0
+      ? '<tr><td colspan="4" class="text-center text-gray-400 py-6">공지가 없습니다</td></tr>'
+      : list.map(n => `
+        <tr>
+          <td>${labels[n.level] || n.level}</td>
+          <td class="font-medium">${n.title}</td>
+          <td class="text-gray-600">${(n.content||"").slice(0,60)}</td>
+          <td class="text-right">
+            <button class="btn btn-danger" onclick="delNotice('${n.id}')">삭제</button>
+          </td>
+        </tr>`).join("");
+  }
+  window.delNotice = (id) => {
+    if (confirm("삭제하시겠습니까?")) remove(ref(db, "notices/" + id));
+  };
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function renderAll() {
+    loadTournament();
+    renderSports();
+    renderTeams();
+    renderMatches();
+    renderResults();
+    renderInterviews();
+    renderCheers();
+    renderNotices();
+  }
+</script>
+
+</body>
+</html>
